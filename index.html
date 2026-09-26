@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Snake — Інтерактивний тест</title>
+<style>
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: "Courier New", monospace;
+    overflow-x: hidden;
+}
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(35,134,54,.18), transparent 25%),
+      radial-gradient(circle at 85% 75%, rgba(19,168,243,.12), transparent 25%);
+    pointer-events: none;
+}
+.container {
+    width: min(900px, 92%);
+    margin: 0 auto;
+    padding: 40px 0 60px;
+    position: relative;
+}
+.hero, .quiz-card, .result-card, .register-card {
+    background: rgba(22,27,34,.92);
+    border: 2px solid #30363d;
+    border-radius: 18px;
+    box-shadow: 0 0 30px rgba(35,134,54,.18);
+}
+.hero {
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 24px;
+}
+h1 { margin: 0 0 12px; color: #7ee787; font-size: clamp(28px, 5vw, 46px); }
+.subtitle { color: #8b949e; margin: 0; line-height: 1.6; }
+.progress-wrap {
+    margin: 24px 0 10px;
+    background: #0d1117;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid #30363d;
+}
+.progress-bar {
+    height: 12px;
+    width: 0%;
+    background: linear-gradient(90deg, #238636, #7ee787);
+    transition: width .35s ease;
+}
+.progress-text { text-align: center; color: #58a6ff; margin: 12px 0 0; }
+
+.register-card { padding: 40px 30px; text-align: center; }
+.form-group {
+    margin: 20px 0;
+    text-align: left;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.form-group label { display: block; margin-bottom: 8px; color: #58a6ff; }
+.form-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: #0d1117;
+    border: 2px solid #30363d;
+    border-radius: 10px;
+    color: #c9d1d9;
+    font: inherit;
+    outline: none;
+    transition: .2s;
+}
+.form-input:focus { border-color: #58a6ff; }
+
+.quiz-card, .result-card { display: none; }
+.quiz-card { padding: 30px; }
+.question-number { color: #58a6ff; font-size: 14px; margin-bottom: 12px; }
+.question { font-size: clamp(20px, 3vw, 28px); color: #f0f6fc; line-height: 1.45; margin-bottom: 25px; }
+.options { display: grid; gap: 12px; }
+.option {
+    width: 100%;
+    border: 2px solid #30363d;
+    background: #161b22;
+    color: #c9d1d9;
+    border-radius: 12px;
+    padding: 17px 18px;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+    transition: .2s;
+}
+.option:hover:not(:disabled) { border-color: #58a6ff; transform: translateY(-2px); }
+.option:disabled { cursor: default; }
+.option.correct { border-color: #7ee787; background: rgba(46,164,79,.18); color: #d2f8d9; }
+.option.wrong { border-color: #f85149; background: rgba(248,81,73,.13); color: #ffd6d5; }
+.feedback {
+    display: none;
+    margin-top: 20px;
+    padding: 16px;
+    border-left: 4px solid #58a6ff;
+    background: #0d1117;
+    border-radius: 8px;
+    line-height: 1.55;
+}
+.controls { display: flex; justify-content: space-between; gap: 15px; margin-top: 25px; }
+button.main-btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 14px 24px;
+    background: #238636;
+    color: white;
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(35,134,54,.25);
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+button.main-btn:hover, a.main-btn:hover { background: #2ea44f; }
+button.main-btn:disabled { opacity: .45; cursor: not-allowed; }
+.secondary { background: #21262d !important; }
+.result-card { text-align: center; padding: 45px 30px; }
+.score { font-size: clamp(52px, 12vw, 100px); color: #7ee787; margin: 15px 0; }
+.badge {
+    display: inline-block;
+    padding: 12px 20px;
+    border-radius: 30px;
+    border: 1px solid #58a6ff;
+    color: #58a6ff;
+    margin-bottom: 20px;
+}
+@media (max-width: 600px) {
+    .container { padding-top: 20px; }
+    .hero, .quiz-card, .register-card { padding: 20px; }
+    .controls { flex-direction: column; }
+    button.main-btn, a.main-btn { width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <section class="hero">
+        <h1>🐍 Cyber Snake Quiz</h1>
+        <p class="subtitle">30 запитань за вашим проєктом «Змійка». Перевіримо HTML, CSS, JavaScript і логіку гри.</p>
+        <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="progress-text" id="progressText">Питання 0 з 30</div>
+    </section>
+
+    <!-- Реєстрація -->
+    <section class="register-card" id="registerCard">
+        <h2>Реєстрація учасника</h2>
+        <p class="subtitle" style="margin-bottom: 20px;">Введіть свої Ім'я та Прізвище, щоб розпочати тест.</p>
+        <div class="form-group">
+            <label for="studentName">Ім'я та Прізвище:</label>
+            <input type="text" id="studentName" class="form-input" placeholder="Наприклад: Олександр Петренко">
+        </div>
+        <button class="main-btn" onclick="startQuiz()">Розпочати тест 🚀</button>
+        <div id="regError" style="color: #f85149; margin-top: 12px; display: none;">Будь ласка, введіть своє ім'я та прізвище!</div>
+    </section>
+
+    <!-- Тест -->
+    <section class="quiz-card" id="quizCard">
+        <div class="question-number" id="questionNumber"></div>
+        <div class="question" id="question"></div>
+        <div class="options" id="options"></div>
+        <div class="feedback" id="feedback"></div>
+        <div class="controls">
+            <button class="main-btn secondary" id="prevBtn">← Назад</button>
+            <button class="main-btn" id="nextBtn" disabled>Наступне →</button>
+        </div>
+    </section>
+
+    <!-- Результат -->
+    <section class="result-card" id="resultCard">
+        <div class="badge">ТЕСТ ЗАВЕРШЕНО</div>
+        <h2>Ваш результат</h2>
+        <div class="score" id="score"></div>
+        <p id="resultText" style="margin-bottom: 25px;"></p>
+        
+        <!-- Кнопка надсилання вам у Телеграм -->
+        <a id="telegramBtn" href="#" target="_blank" class="main-btn" style="background: #238636; margin-bottom: 15px;">
+            Надіслати результат вчителю в Telegram ✈️
+        </a>
+    </section>
+</div>
+
+<script>
+// ВСТАВТЕ СВІЙ НІК В TELEGRAM (без @), наприклад: "anna_teacher"
+const TEACHER_TELEGRAM = "annadaniluk";
+
+const rawQuestions = [
+{
+q: "Який HTML-елемент у проєкті використовується як ігрове поле?",
+o: ["<canvas>", "<section>", "<table>", "<input>"],
+a: 0, e: "Ігрове поле створене за допомогою canvas з id gameCanvas."
+},
+{
+q: "Навіщо потрібен ctx = canvas.getContext('2d')?",
+o: ["Щоб малювати на canvas", "Щоб отримати клавіатуру", "Щоб зберегти результат", "Щоб створити HTML-таблицю"],
+a: 0, e: "2D-контекст ctx використовується для малювання елементів гри."
+},
+{
+q: "Чому canvas 400×400 і gridSize = 20 утворюють сітку 20×20?",
+o: ["400 / 20 = 20 клітинок", "20 + 20 = 400", "canvas автоматично має 20 клітинок", "CSS створює сітку замість JavaScript"],
+a: 0, e: "Кількість клітинок по одній стороні: 400 ÷ 20 = 20."
+},
+{
+q: "Що означають змінні dx і dy?",
+o: ["Напрямок руху змійки по x та y", "Розмір змійки", "Колір змійки", "Кількість гравців"],
+a: 0, e: "dx відповідає за зміну x, а dy — за зміну y."
+},
+{
+q: "Що станеться на початку гри зі значеннями dx = 1 і dy = 0?",
+o: ["Змійка рухатиметься праворуч", "Змійка рухатиметься вгору", "Змійка стоятиме", "Змійка рухатиметься вниз"],
+a: 0, e: "x збільшується, а y не змінюється, тому змійка рухається праворуч."
+},
+{
+q: "Для чого snake.unshift(head) додається під час руху?",
+o: ["Додає нову голову на початок масиву", "Видаляє хвіст", "Створює їжу", "Зупиняє гру"],
+a: 0, e: "unshift додає новий елемент на початок масиву snake."
+},
+{
+q: "Чому після звичайного руху викликається snake.pop()?",
+o: ["Щоб прибрати останній сегмент і зберегти довжину", "Щоб додати нову голову", "Щоб змінити колір", "Щоб створити таблицю рекордів"],
+a: 0, e: "Нова голова додається, а останній сегмент видаляється, тому довжина не змінюється."
+},
+{
+q: "Що відбувається, коли голова змійки потрапляє на звичайну їжу?",
+o: ["Рахунок збільшується на 1 і генерується нова їжа", "Гра одразу завершується", "Рахунок зменшується", "Змійка телепортується"],
+a: 0, e: "foodcount збільшується на 1, а потім створюється нова позиція їжі."
+},
+{
+q: "Скільки балів додає superfood?",
+o: ["3", "1", "2", "10"],
+a: 0, e: "У коді використовується foodcount += 3."
+},
+{
+q: "Яку роль виконує localStorage у цьому проєкті?",
+o: ["Зберігає таблицю рекордів у браузері", "Малює змійку", "Зчитує клавіатуру", "Створює canvas"],
+a: 0, e: "Результати записуються в localStorage, щоб таблиця рекордів зберігалася в браузері."
+},
+{
+q: "Навіщо scores.sort((a, b) => b.score - a.score)?",
+o: ["Сортувати рекорди від більшого до меншого", "Сортувати імена за алфавітом", "Видалити всі результати", "Змінити напрямок змійки"],
+a: 0, e: "Порівняння b.score - a.score розташовує більші значення score першими."
+},
+{
+q: "Що робить scores.slice(0, 10)?",
+o: ["Залишає лише перші 10 результатів", "Додає ще 10 результатів", "Видаляє перші 10 символів", "Перетворює рахунок на текст"],
+a: 0, e: "Після сортування slice(0, 10) залишає десять найкращих записів."
+},
+{
+q: "Яку перевірку виконує collision()?",
+o: ["Удар об межі або власне тіло", "Перевірку кольору їжі", "Перевірку нікнейму", "Перевірку інтернету"],
+a: 0, e: "Функція перевіряє вихід голови за межі та зіткнення з тілом."
+},
+{
+q: "Чому змійці не можна одразу розвернутися у протилежний бік?",
+o: ["Щоб не врізатися миттєво у власне тіло", "Бо canvas не підтримує поворот", "Щоб збільшити рахунок", "Бо localStorage це забороняє"],
+a: 0, e: "Умови зміни напрямку блокують миттєвий розворот на 180 градусів."
+},
+{
+q: "Що запускає основний ігровий цикл кожні 200 мілісекунд?",
+o: ["setInterval(main, 200)", "setTimeout(main, 200)", "prompt(main)", "localStorage(main)"],
+a: 0, e: "setInterval регулярно запускає main з інтервалом 200 мс."
+},
+{
+q: "Логіка: змійка рухається праворуч. Яка клавіша НЕ повинна дозволити їй миттєво повернути ліворуч?",
+o: ["Стрілка вліво", "Стрілка вгору", "Стрілка вниз", "Будь-яка клавіша"],
+a: 0, e: "Коли dx = 1, умова для руху вліво не дозволяє встановити dx = -1."
+},
+{
+q: "Що відбувається зі superfood приблизно через 4 секунди після появи, якщо її не зібрали?",
+o: ["Вона стає неактивною", "Вона додає 3 бали сама", "Гра завершується", "Вона перетворюється на змійку"],
+a: 0, e: "setTimeout через 4000 мс встановлює superfood.activ = false."
+},
+{
+q: "Який метод використовується для випадкової генерації координат їжі?",
+o: ["Math.random()", "Math.sort()", "Math.text()", "Math.canvas()"],
+a: 0, e: "Math.random() дає випадкове число, з якого формується координата."
+},
+{
+q: "Що робить canvas.addEventListener('click', ...), коли gameover = true?",
+o: ["Перезапускає гру через resetgame()", "Зберігає новий рекорд", "Закриває сторінку", "Змінює колір фону"],
+a: 0, e: "Якщо гра завершена, клік по canvas викликає resetgame()."
+},
+{
+q: "Логіка: змійка має 5 сегментів, з'їдає superfood, а код додає два сегменти через push(). Скільки сегментів стане?",
+o: ["7", "6", "8", "5"],
+a: 0, e: "5 + 2 = 7 сегментів."
+},
+{
+q: "Який CSS-властивістю у проєкті задається темний фон сторінки?",
+o: ["background-color", "font-size", "border-radius", "cursor"],
+a: 0, e: "Для body використовується background-color: #0d1117."
+},
+{
+q: "Для чого використовується display: flex у body?",
+o: ["Для гнучкого розташування ігрового поля та таблиці", "Для запуску JavaScript", "Для створення canvas", "Для збереження рекордів"],
+a: 0, e: "Flexbox керує розташуванням елементів body та дозволяє розмістити їх поруч."
+},
+{
+q: "Що робить flex-direction: row у body?",
+o: ["Розташовує елементи в ряд", "Розташовує елементи стовпчиком", "Ховає елементи", "Змінює їхній колір"],
+a: 0, e: "row задає напрямок flex-контейнера по горизонталі."
+},
+{
+q: "Навіщо у .leaderboard використовується border-radius: 8px?",
+o: ["Щоб заокруглити кути блока", "Щоб додати тінь", "Щоб змінити ширину", "Щоб вирівняти текст"],
+a: 0, e: "border-radius відповідає за заокруглення кутів."
+},
+{
+q: "Що робить document.getElementById('score')?",
+o: ["Знаходить HTML-елемент із id score", "Створює новий елемент", "Видаляє рахунок", "Змінює CSS усієї сторінки"],
+a: 0, e: "Метод повертає елемент документа, у якого id дорівнює score."
+},
+{
+q: "Як у проєкті змінюється текст рахунку на сторінці?",
+o: ["Через apple.innerText = foodcount", "Через canvas.width = foodcount", "Через localStorage.clear()", "Через Math.random()"],
+a: 0, e: "Властивість innerText змінює текст HTML-елемента."
+},
+{
+q: "Що станеться, якщо collision() поверне true у main()?",
+o: ["gameover стане true і результат збережеться", "Рахунок автоматично стане 0", "З'явиться нова superfood", "Змійка почне рухатися швидше"],
+a: 0, e: "main() встановлює gameover = true, зупиняє таймери та викликає saveScore()."
+},
+{
+q: "Логіка: якщо звичайну їжу з'їсти 4 рази, на скільки збільшиться foodcount?",
+o: ["На 4", "На 3", "На 5", "На 8"],
+a: 0, e: "Кожне з'їдання звичайної їжі додає 1 бал, тому 4 рази дають +4."
+},
+{
+q: "Для чого потрібна функція resetgame()?",
+o: ["Повертає гру до початкового стану", "Тільки малює сітку", "Тільки сортує рекорди", "Змінює розмір canvas"],
+a: 0, e: "resetgame() повертає змійку, напрямок, рахунок і таймери до стану нової гри."
+},
+{
+q: "Що робить document.addEventListener('keydown', changeDirection)?",
+o: ["Викликає changeDirection при натисканні клавіші", "Викликає її кожні 200 мс", "Запускає таблицю рекордів", "Створює нову їжу"],
+a: 0, e: "Подія keydown запускає changeDirection, коли користувач натискає клавішу."
+}
+];
+
+let questions = [];
+let current = 0;
+let selected = [];
+let score = 0;
+let studentFullName = "";
+
+const questionEl = document.getElementById("question");
+const optionsEl = document.getElementById("options");
+const feedbackEl = document.getElementById("feedback");
+const questionNumberEl = document.getElementById("questionNumber");
+const nextBtn = document.getElementById("nextBtn");
+const prevBtn = document.getElementById("prevBtn");
+
+function shuffleArray(array) {
+    let arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function initQuizData() {
+    const shuffledRaw = shuffleArray(rawQuestions);
+    questions = shuffledRaw.map(item => {
+        let optionsWithIndex = item.o.map((opt, idx) => ({ text: opt, isCorrect: idx === item.a }));
+        let shuffledOptions = shuffleArray(optionsWithIndex);
+        let newCorrectIndex = shuffledOptions.findIndex(opt => opt.isCorrect);
+        return {
+            q: item.q,
+            o: shuffledOptions.map(opt => opt.text),
+            a: newCorrectIndex,
+            e: item.e
+        };
+    });
+    selected = Array(questions.length).fill(null);
+}
+
+function startQuiz() {
+    const input = document.getElementById("studentName");
+    const errorEl = document.getElementById("regError");
+    
+    if (!input.value.trim()) {
+        errorEl.style.display = "block";
+        return;
+    }
+    
+    studentFullName = input.value.trim();
+    document.getElementById("registerCard").style.display = "none";
+    document.getElementById("quizCard").style.display = "block";
+    
+    initQuizData();
+    renderQuestion();
+}
+
+function renderQuestion() {
+    const item = questions[current];
+    questionNumberEl.textContent = `ПИТАННЯ ${current + 1}`;
+    questionEl.textContent = item.q;
+    optionsEl.innerHTML = "";
+    feedbackEl.style.display = "none";
+    feedbackEl.textContent = "";
+
+    item.o.forEach((text, index) => {
+        const btn = document.createElement("button");
+        btn.className = "option";
+        btn.textContent = text;
+
+        if (selected[current] !== null) {
+            btn.disabled = true;
+            if (index === item.a) btn.classList.add("correct");
+            if (index === selected[current] && index !== item.a) btn.classList.add("wrong");
+        } else {
+            btn.onclick = () => chooseAnswer(index);
+        }
+        optionsEl.appendChild(btn);
+    });
+
+    if (selected[current] !== null) {
+        feedbackEl.textContent = item.e;
+        feedbackEl.style.display = "block";
+    }
+
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = selected[current] === null;
+    nextBtn.textContent = current === questions.length - 1 ? "Завершити тест ✓" : "Наступне →";
+
+    const progress = ((current + 1) / questions.length) * 100;
+    document.getElementById("progressBar").style.width = progress + "%";
+    document.getElementById("progressText").textContent = `Питання ${current + 1} з ${questions.length}`;
+}
+
+function chooseAnswer(index) {
+    selected[current] = index;
+    if (index === questions[current].a) score++;
+    renderQuestion();
+}
+
+nextBtn.onclick = () => {
+    if (current === questions.length - 1) showResult();
+    else { current++; renderQuestion(); }
+};
+
+prevBtn.onclick = () => {
+    if (current > 0) { current--; renderQuestion(); }
+};
+
+function showResult() {
+    document.getElementById("quizCard").style.display = "none";
+    document.getElementById("resultCard").style.display = "block";
+    document.getElementById("progressBar").style.width = "100%";
+    document.getElementById("progressText").textContent = "Тест завершено!";
+    document.getElementById("score").textContent = `${score}/${questions.length}`;
+    document.getElementById("resultText").textContent = `Чудова робота, ${studentFullName}!`;
+
+    // Формуємо посилання для Телеграма
+    const text = encodeURIComponent(`Привіт! Я ${studentFullName}, пройшов тест Cyber Snake. Мій результат: ${score} з ${questions.length}.`);
+    const tgUrl = TEACHER_TELEGRAM.includes("ТУТ") 
+        ? `https://t.me/share/url?url=${text}` 
+        : `https://t.me/${TEACHER_TELEGRAM}?text=${text}`;
+    
+    document.getElementById("telegramBtn").href = tgUrl;
+}
+</script>
+</body>
+</html>
